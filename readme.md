@@ -19,3 +19,9 @@ pipenv run python app.py "title of book"
 ```
 
 TODO: accept MARC file and iterate over it.
+
+## LICENSE
+
+[ECL Version 2.0](https://opensource.org/licenses/ECL-2.0)
+
+Code from Summon API Toolkit may come with a different license but none was stated in their GitHub repo.
