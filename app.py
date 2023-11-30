@@ -8,8 +8,8 @@ import os
 import sys
 from urllib.parse import urlencode, quote_plus, unquote_plus
 
-
 from dotenv import dotenv_values
+from pymarc import MARCReader
 import requests
 
 config = {
@@ -18,6 +18,8 @@ config = {
 }
 config["ACCEPT"] = "application/json"
 config["PATH"] = "/2.0.0/search"
+
+summary = {"Records": 0, "Found": 0, "ISBN Matches": 0}
 
 
 def build_auth_string(id_string) -> str:
@@ -100,10 +102,10 @@ def result(documents):
     print(f"Search Results: {len(documents)}")
     for doc in documents:
         # TODO strip <h> highlight tags from title
-        print(f"Title: {doc['Title'][0]}")
-        print(f"Authors: {', '.join(doc['Author'])}")
-        print(f"Publication Date: {doc['PublicationDate'][0]}")
-        print(f"ISBNs: {', '.join(doc['ISBN'])}")
+        print(f"Title: {doc.get('Title',[''])[0]}")
+        print(f"Authors: {', '.join(doc.get('Author',['']))}")
+        print(f"Publication Date: {doc.get('PublicationDate',[''])[0]}")
+        print(f"ISBNs: {', '.join(doc.get('ISBN',['']))}")
         print(f"Type: {doc['ContentType'][0]}")
         print(
             f"Summon Link: https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?bookMark={doc['BookMark'][0]}"
@@ -111,9 +113,59 @@ def result(documents):
         print("")
 
 
+def process_marc(file):
+    """
+    Parse MARC file and search for items.
+    """
+    reader = MARCReader(open(file, "rb"))
+    for record in reader:
+        if record:
+            summary["Records"] += 1
+            title = record.title
+            # ! pymarc author includes $d date and $9 authid which never matches with Summon
+            author = record.author
+            isbn = record.isbn
+            params = {
+                "s.q": "",
+                "s.fvf": ["SourceType,Library Catalog,f"],
+            }
+            if title:
+                params["s.q"] += f"(TitleCombined:({title})) "
+            if title and author:
+                params["s.q"] += f"AND "
+            if author:
+                params["s.q"] += f"(AuthorCombined:({author})) "
+            print(params)
+            docs = search(params)["documents"]
+            print(result(docs))
+            if len(docs):
+                summary["Found"] += 1
+                for doc in docs:
+                    if isbn in doc.get("ISBN", []):
+                        summary["ISBN Matches"] += 1
+        else:
+            summary["Malformed Records"] += 1
+    print(
+        f"""
+Records:      {summary["Records"]}
+Found:        {summary["Found"]}
+ISBN Matches: {summary["ISBN Matches"]}
+"""
+    )
+    if summary.get("Malformed Records"):
+        print(f"Malformed Records: {summary['Malformed Records']}")
+
+
 if __name__ == "__main__":
-    params = {
-        "s.q": f'"{sys.argv[1]}"',
-        "s.fvf": ["SourceType,Library Catalog,f"],
-    }
-    print(result(search(params).get("documents", [])))
+    # if cli arg looks like a MARC file, parse it & search for items
+    # otherwise treat as a title string for search
+    arg = sys.argv[1]
+    if arg.endswith(".mrc") or arg.endswith(".marc"):
+        process_marc(arg)
+    elif len(arg) > 0:
+        params = {
+            "s.q": f'"{arg}"',
+            "s.fvf": ["SourceType,Library Catalog,f"],
+        }
+        output = result(search(params)["documents"])
+        print(output)

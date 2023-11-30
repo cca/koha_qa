@@ -15,10 +15,11 @@ vim .env # edit in API key
 ## Usage
 
 ```sh
-pipenv run python app.py "title of book"
+# search for single title
+pipenv run python app.py "the color purple"
+# iterate over file of MARC records
+pipenv run python app.py path/to/records.mrc
 ```
-
-TODO: accept MARC file and iterate over it.
 
 ## LICENSE
 
