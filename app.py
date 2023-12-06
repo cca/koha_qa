@@ -2,6 +2,7 @@
 # https://github.com/summon/summon-api-toolkit/blob/master/python3/app/modules/summonapi.py
 import argparse
 import base64
+import csv
 from datetime import datetime
 import hashlib
 import hmac
@@ -128,6 +129,33 @@ def result(documents):
         print("")
 
 
+def get_author(record):
+    """
+    Get author from MARC record. Pymarc's record.author includes identifier &
+    dates which messes up Summon query.
+    """
+    author = record.get_fields("100")
+    if len(author):
+        author = author[0].get_subfields("a")[0]
+    return author
+
+
+def make_query(record):
+    """
+    Create Summon query string from MARC record.
+    """
+    title = record.title
+    author = get_author(record)
+
+    params = {
+        "s.q": f"(TitleCombined:({title}))",
+        "s.fvf": "SourceType,Library Catalog,f",
+    }
+    if author:
+        params["s.q"] += f" AND (AuthorCombined:({author})) "
+    return params
+
+
 def summarize():
     print(
         f"""
@@ -140,28 +168,53 @@ ISBN Matches: {summary["ISBN Matches"]}
         print(f"Malformed Records: {summary['Malformed Records']}")
 
 
+def write_missing(missing):
+    """
+    Write missing records to CSV file.
+    """
+    if len(missing):
+        with open(args.missing, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    "Biblionumber",
+                    "Title",
+                    "Author",
+                    "ISBN",
+                    "Koha Link",
+                    "Summon Search",
+                ]
+            )
+            for record in missing:
+                # null for non-Koha records
+                biblionumber = record.get("999", {}).get("c")
+                qs = urlencode(make_query(record), doseq=True, quote_via=quote_plus)
+                writer.writerow(
+                    [
+                        biblionumber,
+                        record.title,
+                        get_author(record),
+                        record.isbn,
+                        f"https://library.cca.edu/cgi-bin/koha/opac-detail.pl?biblionumber={biblionumber}",
+                        f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{qs}",
+                    ]
+                )
+
+
 def process_marc(file):
     """
     Parse MARC file and search for items.
     """
+    missing = []
     reader = MARCReader(open(file, "rb"))
     for i, record in enumerate(reader):
         if args.count and i >= args.count:
             break
         if record:
             summary["Records"] += 1
-            title = record.title
-            author = record.get_fields("100")
-            if len(author):
-                author = author[0].get_subfields("a")[0]
+            # TODO: handle multiple ISBNs
             isbn = record.isbn
-            params = {
-                "s.q": f"(TitleCombined:({title}))",
-                "s.fvf": "SourceType,Library Catalog,f",
-            }
-            if author:
-                params["s.q"] += f" AND (AuthorCombined:({author})) "
-
+            params = make_query(record)
             docs = search(params)["documents"]
             if args.debug:
                 print(result(docs))
@@ -171,13 +224,18 @@ def process_marc(file):
                     if isbn in doc.get("ISBN", []):
                         summary["ISBN Matches"] += 1
                         break
+            elif args and args.missing:
+                missing.append(record)
+
         else:
             summary["Malformed Records"] += 1
 
     summarize()
+    if args and args.missing:
+        write_missing(missing)
 
 
-def main(args):
+def main():
     # if cli arg looks like a MARC file, parse it & search for items
     # otherwise treat as a title string for search
     if args.query.endswith(".mrc") or args.query.endswith(".marc"):
@@ -206,5 +264,9 @@ if __name__ == "__main__":
         action="store_true",
         help="Debug mode (print query links and search results)",
     )
+    parser.add_argument(
+        "-m", "--missing", help="write list of missing records to CSV file"
+    )
+    global args
     args = parser.parse_args()
-    main(args)
+    main()
