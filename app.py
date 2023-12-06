@@ -129,23 +129,24 @@ def result(documents):
         print("")
 
 
-def get_author(record):
+def get_first_author(record):
     """
     Get author from MARC record. Pymarc's record.author includes identifier &
     dates which messes up Summon query.
     """
     author = record.get_fields("100")
     if len(author):
-        author = author[0].get_subfields("a")[0]
-    return author
+        return author[0].get_subfields("a")[0]
+    else:
+        return None
 
 
-def make_query(record):
+def make_query(record) -> dict[str, str]:
     """
     Create Summon query string from MARC record.
     """
     title = record.title
-    author = get_author(record)
+    author = get_first_author(record)
 
     params = {
         "s.q": f"(TitleCombined:({title}))",
@@ -193,7 +194,7 @@ def write_missing(missing):
                     [
                         biblionumber,
                         record.title,
-                        get_author(record),
+                        get_first_author(record),
                         record.isbn,
                         f"https://library.cca.edu/cgi-bin/koha/opac-detail.pl?biblionumber={biblionumber}",
                         f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{qs}",
