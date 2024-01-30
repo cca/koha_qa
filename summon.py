@@ -236,6 +236,16 @@ def process_marc(file):
         write_missing(missing)
 
 
+def quote_if_unquoted(s):
+    """
+    Quote string if it's not already quoted.
+    """
+    if s.startswith('"') and s.endswith('"'):
+        return s
+    else:
+        return f'"{s}"'
+
+
 def main():
     # if cli arg looks like a MARC file, parse it & search for items
     # otherwise treat as a title string for search
@@ -243,7 +253,7 @@ def main():
         process_marc(args.query)
     elif len(args.query) > 0:
         params = {
-            "s.q": f'"{args.query}"',
+            "s.q": f"{quote_if_unquoted(args.query)}",
             "s.fvf": ["SourceType,Library Catalog,f"],
         }
         output = result(search(params)["documents"])
