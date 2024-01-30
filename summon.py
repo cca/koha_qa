@@ -256,8 +256,7 @@ def main():
             "s.q": f"{quote_if_unquoted(args.query)}",
             "s.fvf": ["SourceType,Library Catalog,f"],
         }
-        output = result(search(params)["documents"])
-        print(output)
+        result(search(params)["documents"])
 
 
 if __name__ == "__main__":
