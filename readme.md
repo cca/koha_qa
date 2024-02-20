@@ -4,12 +4,12 @@ Various bibliographic metadata tools.
 
 ## Setup
 
-To use summon.py, obtain a Summon API key from the Ex Libris Developer Network, see [their documentation](https://knowledge.exlibrisgroup.com/Summon/Product_Documentation/Configuring_The_Summon_Service/Configurations_Outside_of_the_Summon_Administration_Console/Summon%3A_Using_the_Summon_API).
+To use summon.py, obtain a Summon API key from the Ex Libris Developer Network, see [their documentation](https://knowledge.exlibrisgroup.com/Summon/Product_Documentation/Configuring_The_Summon_Service/Configurations_Outside_of_the_Summon_Administration_Console/Summon%3A_Using_the_Summon_API). To use summon-update.py, add our Summon SFTP credentials to the .env file.
 
 ```sh
 pipenv install
 cp example.env .env
-vim .env # edit in API key
+vim .env # edit in secret values
 ```
 
 ## comicsplus.py
@@ -55,6 +55,22 @@ ISBN Matches: 155
 ```
 
 This is a pretty unsophisticated check right now. A record with any search result is considered in Summon, and the ISBN test is only the first ISBN against all Summon ISBNs (not all against all).
+
+## summon-update.py
+
+Update our Summon index with a file of MARC records. Can delete or update records. A "full" update requires contacting support but this script can upload the file.
+
+```sh
+Usage: summon-update.py [OPTIONS] FILE_PATH
+
+  Puts a file to the Summon SFTP server.
+
+Options:
+  -h, --help                      Show this message and exit.
+  -t, --type [updates|deletes|full]
+                                  type of update
+  -d, --debug                     enable SFTP debug logging
+```
 
 ## LICENSE
 
