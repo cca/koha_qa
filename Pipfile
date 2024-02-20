@@ -5,8 +5,8 @@ name = "pypi"
 
 [packages]
 requests = "2.31.0"
-python-dotenv = "1.0.0"
-pymarc = "5.1.0"
+python-dotenv = "1.0.1"
+pymarc = "5.1.2"
 
 [dev-packages]
 
