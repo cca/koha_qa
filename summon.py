@@ -29,6 +29,7 @@ summary = {
     "Found": 0,
     "Had ISBN": 0,
     "ISBN Matches": 0,
+    "HTTP Errors": 0,
 }
 
 
@@ -111,8 +112,9 @@ def search(params):
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         return response.json()
-    except:
-        print(f"Error: {sys.exc_info()[0]}")
+    except requests.exceptions.ConnectionError as e:
+        summary["HTTP Errors"] += 1
+        print(f"Connection Error: {e}")
         print(f"Search URL: {url}")
         time.sleep(5)  # wait and keep going
         return {"documents": []}
@@ -169,6 +171,7 @@ def summarize():
 Had Search Results: {summary["Found"]}
 Had ISBN:           {summary["Had ISBN"]}
 ISBN Matches:       {summary["ISBN Matches"]}
+HTTP Errors:        {summary["HTTP Errors"]}
 """
     )
     if summary.get("Malformed Records"):
