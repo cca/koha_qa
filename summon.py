@@ -116,7 +116,7 @@ def search(params) -> list:
     except requests.exceptions.ConnectionError as e:
         summary["HTTP Errors"] += 1
         print(f"Connection Error: {e}")
-        print(f"Search URL: {url}")
+        print(f'Search URL: {url.replace("/api.", "/cca.").replace("2.0.0/", "")}')
         time.sleep(5)  # wait and keep going
         return []
 
