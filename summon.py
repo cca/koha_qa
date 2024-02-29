@@ -84,6 +84,32 @@ def build_headers(query) -> dict[str, str]:
     }
 
 
+def encode_query(params) -> str:
+    """
+    Encodes the query parameters for the Summon API.
+
+    Args:
+        params (dict): Search parameters, sent as dictionary or list of tuples
+
+    Returns:
+        string: URL-encoded query string
+    """
+    return urlencode(params, doseq=True, quote_via=quote_plus)
+
+
+def search_link(qs) -> str:
+    """
+    Generate a (clickable, non-API) search URL for Summon from a query string.
+
+    Args:
+        qs (str): URL-encoded query string from encode_query
+
+    Returns:
+        string: URL for Summon API search
+    """
+    return f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{qs}"
+
+
 def search(params) -> list:
     """
     Searches the Summon API with the provided parameters.
@@ -96,16 +122,14 @@ def search(params) -> list:
     """
     host = "api.summon.serialssolutions.com"
     path = "/2.0.0/search"
-    query = urlencode(params, doseq=True, quote_via=quote_plus)
+    qs = encode_query(params)
 
-    headers = build_headers(query)
+    headers = build_headers(qs)
 
-    url = "https://{}{}?{}".format(host, path, query)
+    url = "https://{}{}?{}".format(host, path, qs)
     # print normal, non-API search URL for debugging
     if args.debug:
-        print(
-            f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{query}"
-        )
+        print(search_link(qs))
     # Summon API connection errors are common
     # TODO retry with a delay in between?
     time.sleep(1)
@@ -116,7 +140,7 @@ def search(params) -> list:
     except requests.exceptions.ConnectionError as e:
         summary["HTTP Errors"] += 1
         print(f"Connection Error: {e}")
-        print(f'Search URL: {url.replace("/api.", "/cca.").replace("2.0.0/", "")}')
+        print(f"Search URL: {search_link(qs)}")
         time.sleep(5)  # wait and keep going
         return []
 
@@ -199,15 +223,15 @@ def write_missing(missing):
             for record in missing:
                 # null for non-Koha records
                 biblionumber = record.get("999", {}).get("c")
-                qs = urlencode(make_query(record), doseq=True, quote_via=quote_plus)
+                qs = encode_query(make_query(record))
                 writer.writerow(
                     [
                         biblionumber,
                         record.title,
                         get_first_author(record),
                         record.isbn,
-                        f"https://library.cca.edu/cgi-bin/koha/opac-detail.pl?biblionumber={biblionumber}",
-                        f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{qs}",
+                        f"https://{config['KOHA_DOMAIN']}/cgi-bin/koha/opac-detail.pl?biblionumber={biblionumber}",
+                        search_link(qs),
                     ]
                 )
 
