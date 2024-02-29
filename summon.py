@@ -84,7 +84,7 @@ def build_headers(query) -> dict[str, str]:
     }
 
 
-def search(params):
+def search(params) -> list:
     """
     Searches the Summon API with the provided parameters.
 
@@ -106,18 +106,19 @@ def search(params):
         print(
             f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{query}"
         )
-    # ! sometimes fails with connection error, not even at particularly high volume
+    # Summon API connection errors are common
+    # TODO retry with a delay in between?
     time.sleep(1)
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return response.json()
+        return response.json()["documents"]
     except requests.exceptions.ConnectionError as e:
         summary["HTTP Errors"] += 1
         print(f"Connection Error: {e}")
         print(f"Search URL: {url}")
         time.sleep(5)  # wait and keep going
-        return {"documents": []}
+        return []
 
 
 def result(documents):
@@ -242,24 +243,22 @@ def process_marc(file):
             isbn_fields = record.get_fields("020")
             isbn_subfields = [field.get_subfields("a") for field in isbn_fields]
             isbns = [num_only(isbn) for sublist in isbn_subfields for isbn in sublist]
-            if len(isbns):
-                summary["Had ISBN"] += 1
+            summary["Had ISBN"] += 1 if len(isbns) else 0
 
             params = make_query(record)
-            docs = search(params)["documents"]
+            docs = search(params)
             if args.debug:
                 result(docs)
 
-            if len(docs):
-                summary["Found"] += 1
-                if len(isbns):
-                    for doc in docs:
-                        if has_match(doc.get("ISBN", []), isbns):
-                            summary["ISBN Matches"] += 1
-                            break
-                    else:
-                        if args.missing:
-                            missing.append(record)
+            summary["Found"] += 1 if len(docs) else 0
+            if len(isbns):
+                for doc in docs:
+                    if has_match(doc.get("ISBN", []), isbns):
+                        summary["ISBN Matches"] += 1
+                        break
+                else:
+                    if args.missing:
+                        missing.append(record)
 
         else:
             summary["Malformed Records"] += 1
@@ -295,7 +294,7 @@ def main():
             "s.q": f"{quote_if_unquoted(args.query)}",
             "s.fvf": ["SourceType,Library Catalog,f"],
         }
-        result(search(params)["documents"])
+        result(search(params))
 
 
 if __name__ == "__main__":
