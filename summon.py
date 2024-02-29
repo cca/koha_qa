@@ -249,11 +249,11 @@ def process_marc(file):
             if len(docs):
                 summary["Found"] += 1
                 for doc in docs:
-                    if has_match(doc.get("ISBN", []), isbns):
+                    if len(isbns) and has_match(doc.get("ISBN", []), isbns):
                         summary["ISBN Matches"] += 1
                         break
-            elif args and args.missing:
-                missing.append(record)
+                    elif args.missing:
+                        missing.append(record)
 
         else:
             summary["Malformed Records"] += 1
