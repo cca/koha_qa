@@ -31,7 +31,7 @@ options:
 
 ## summon.py
 
-Check if a MARC record is in CCA's Summon instance.
+Check if MARC record(s) are in CCA's Summon index.
 
 ```sh
 # search for single title with detailed search results output
@@ -47,14 +47,15 @@ Summon Link: https://cca.summon.serialssolutions.com/search?bookMark=...
 # more search results printed...
 
 # iterate over MARC records with summary output and CSV of missing records
-> pipenv run python summon.py --missing missing.csv path/to/records.mrc
+> pipenv run python summon.py --missing missing.csv file.mrc
 
-Records: 174
-Found: 165
-ISBN Matches: 155
+Total Records:      50
+Had Search Results: 50
+Had ISBN:           46
+ISBN Matches:       45
 ```
 
-This is a pretty unsophisticated check right now. A record with any search result is considered in Summon, and the ISBN test is only the first ISBN against all Summon ISBNs (not all against all).
+A record is considered "missing" if there is no ISBN match in Summon, records without ISBNs are not considered missing. The Summon search is a title search, so records with short, generic titles like "Art Now" can be considered "missing" because the record with the matching ISBN isn't in the first page of 10 search results returned.
 
 ## summon-update.py
 
