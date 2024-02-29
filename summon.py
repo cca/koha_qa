@@ -23,7 +23,12 @@ config = {
 config["ACCEPT"] = "application/json"
 config["PATH"] = "/2.0.0/search"
 
-summary = {"Records": 0, "Found": 0, "ISBN Matches": 0}
+summary = {
+    "Records": 0,
+    "Found": 0,
+    "Had ISBN": 0,
+    "ISBN Matches": 0,
+}
 
 
 def build_auth_string(id_string) -> str:
@@ -159,10 +164,10 @@ def make_query(record) -> dict[str, str]:
 
 def summarize():
     print(
-        f"""
-Records:      {summary["Records"]}
-Found:        {summary["Found"]}
-ISBN Matches: {summary["ISBN Matches"]}
+        f"""Total Records:      {summary["Records"]}
+Had Search Results: {summary["Found"]}
+Had ISBN:           {summary["Had ISBN"]}
+ISBN Matches:       {summary["ISBN Matches"]}
 """
     )
     if summary.get("Malformed Records"):
@@ -202,6 +207,22 @@ def write_missing(missing):
                 )
 
 
+def has_match(list1: list, list2: list) -> bool:
+    """
+    Check if any items in list1 are in list2.
+    """
+    return any(item in list1 for item in list2)
+
+
+def num_only(isbn: str) -> str:
+    """
+    020$a ISBN fields often have a type or volume postfix
+    "9780060638412 (v. 1-2)", "9780393050240 (hardcover)"
+    Split on space and return first part.
+    """
+    return isbn.split(" ")[0]
+
+
 def process_marc(file):
     """
     Parse MARC file and search for items.
@@ -213,16 +234,22 @@ def process_marc(file):
             break
         if record:
             summary["Records"] += 1
-            # TODO: handle multiple ISBNs
-            isbn = record.isbn
+
+            isbn_fields = record.get_fields("020")
+            isbn_subfields = [field.get_subfields("a") for field in isbn_fields]
+            isbns = [num_only(isbn) for sublist in isbn_subfields for isbn in sublist]
+            if len(isbns):
+                summary["Had ISBN"] += 1
+
             params = make_query(record)
             docs = search(params)["documents"]
             if args.debug:
-                print(result(docs))
+                result(docs)
+
             if len(docs):
                 summary["Found"] += 1
                 for doc in docs:
-                    if isbn in doc.get("ISBN", []):
+                    if has_match(doc.get("ISBN", []), isbns):
                         summary["ISBN Matches"] += 1
                         break
             elif args and args.missing:
