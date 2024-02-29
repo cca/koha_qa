@@ -105,7 +105,6 @@ def search(params):
             f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{query}"
         )
     # ! sometimes fails with connection error, not even at particularly high volume
-    # TODO catch the error and keep going
     time.sleep(1)
     try:
         response = requests.get(url, headers=headers)
@@ -113,8 +112,9 @@ def search(params):
         return response.json()
     except:
         print(f"Error: {sys.exc_info()[0]}")
-        summarize()
-        exit(1)
+        print(f"Search URL: {url}")
+        time.sleep(5)  # wait and keep going
+        return {"documents": []}
 
 
 def result(documents):
