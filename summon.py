@@ -262,6 +262,14 @@ def process_marc(file):
         if args.count and i >= args.count:
             break
         if record:
+            # skip suppressed records 942$n = 1
+            try:
+                suppressed = record.get_fields("942")[0].get_subfields("n")[0]
+                if suppressed == "1" or suppressed.lower() == "true":
+                    continue
+            except IndexError:
+                pass
+
             summary["Records"] += 1
 
             isbn_fields = record.get_fields("020")
