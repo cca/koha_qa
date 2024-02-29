@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import os
 import re
+import signal
 import sys
 import time
 from urllib.parse import urlencode, quote_plus, unquote_plus
@@ -275,6 +276,12 @@ def quote_if_unquoted(s):
         return f'"{s}"'
 
 
+def signal_handler(sig, frame):
+    print("Caught SIGINT, printing summary")
+    summarize()
+    sys.exit(1)
+
+
 def main():
     # if cli arg looks like a MARC file, parse it & search for items
     # otherwise treat as a title string for search
@@ -308,4 +315,7 @@ if __name__ == "__main__":
     )
     global args
     args = parser.parse_args()
+
+    # catch SIGINT and print summary
+    signal.signal(signal.SIGINT, signal_handler)
     main()
