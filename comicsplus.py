@@ -3,6 +3,7 @@ Add our proxy server prefix to the 856$u subfield in Comics Plus MARC records.
 Also, print a warning for "c" corrected or "d" deleted records which we will have
 to test for in the future.
 """
+
 import argparse
 from datetime import date
 
@@ -13,6 +14,7 @@ def is_update_or_delete(record):
     """Print message if we find a corrected or deleted record"""
     # https://www.loc.gov/marc/bibliographic/bdleader.html
     status = record.leader[5]
+    # ! Comics Plus doesn't seem to use "c" for corrected records
     if status in ["c", "d"]:
         print(
             f"Warning: {'corrected' if status == 'c' else 'deleted'} record: {record.title}"
