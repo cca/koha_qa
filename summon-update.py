@@ -7,6 +7,7 @@ from typing import Literal
 
 import click
 from dotenv import dotenv_values
+from pymarc import MARCReader, Record
 import pysftp
 
 config = {
@@ -67,6 +68,19 @@ def put_file(
     """
     Puts a file to the Summon SFTP server.
     """
+    # we need to know the number of records for Summon admin
+    with open(file_path, "rb") as fh:
+        reader = MARCReader(fh)
+        # count=1 for non-MARC files if we don't include the isinstance check
+        count = sum(1 for record in reader if isinstance(record, Record))
+        if count and count != 0:
+            logger.info(f"Number of records in {file_path}: {count}")
+        else:
+            logger.error(
+                f"No records found in {file_path}. Are you sure it's a MARC file?"
+            )
+            exit()
+
     remote_path = f"{filetype}/{rename(filetype)}"
     with pysftp.Connection(
         cnopts=cnopts,
