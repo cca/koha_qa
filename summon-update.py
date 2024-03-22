@@ -13,7 +13,20 @@ config = {
     **dotenv_values(".env"),  # load shared development variables
     **os.environ,  # override loaded values with environment variables
 }
-logger = logging.getLogger(__name__)
+# log to data/log.txt and stdout
+logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+logging.basicConfig(
+    filename=config.get("LOG_FILE", "data/log.txt"),
+    level=logging.INFO,
+    format=logformat,
+)
+# also to stdout
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter(logformat)
+console.setFormatter(formatter)
+logging.getLogger("summon_update").addHandler(console)
+logger = logging.getLogger("summon_update")
 
 # fix pysftp bug "AttributeError: 'Connection' object has no attribute '_sftp_live'"
 cnopts = pysftp.CnOpts()
