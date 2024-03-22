@@ -59,7 +59,7 @@ A record is considered "missing" if there is no ISBN match in Summon, records wi
 
 ## summon-update.py
 
-Update our Summon index with a file of MARC records. Can delete or update records. A "full" update requires contacting support but this script can upload the file.
+Update our Summon index with a file of MARC records. Can delete or update records. A "full" update requires contacting support but this script can upload the file. Export records from Koha staff side > Cataloging > [Export data](https://library-staff.cca.edu/cgi-bin/koha/tools/export.pl).
 
 ```sh
 Usage: summon-update.py [OPTIONS] FILE_PATH
