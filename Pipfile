@@ -4,11 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-click = "==8.1.7"
+click = "8.1.7"
 pymarc = "5.1.2"
 pysftp = "0.2.9"
 python-dotenv = "1.0.1"
-requests = "2.31.0"
+requests = "2.32.3"
 
 [dev-packages]
 
