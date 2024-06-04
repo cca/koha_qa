@@ -1,3 +1,5 @@
+# Usage: python summon.py "title string" or python summon.py file.mrc
+# Check if a title or set of MARC records is in Summon
 # Code substantially based on Summon API Toolkit for Python 3
 # https://github.com/summon/summon-api-toolkit/blob/master/python3/app/modules/summonapi.py
 import argparse
@@ -11,20 +13,21 @@ import re
 import signal
 import sys
 import time
+from typing import List
 from urllib.parse import urlencode, quote_plus, unquote_plus
 
 from dotenv import dotenv_values
-from pymarc import MARCReader
+from pymarc import Field, MARCReader, Record
 import requests
 
-config = {
+config: dict = {
     **dotenv_values(".env"),  # load shared development variables
     **os.environ,  # override loaded values with environment variables
 }
 config["ACCEPT"] = "application/json"
 config["PATH"] = "/2.0.0/search"
 
-summary = {
+summary: dict[str, int] = {
     "Records": 0,
     "Found": 0,
     "Had ISBN": 0,
@@ -33,7 +36,7 @@ summary = {
 }
 
 
-def build_auth_string(id_string) -> str:
+def build_auth_string(id_string: str) -> str:
     """
     Generates authentication string needed for Authorization header.
 
@@ -43,12 +46,12 @@ def build_auth_string(id_string) -> str:
     Returns:
         string: "Summon your_access_id;base64_encoded_hash"
     """
-    key = bytes(config["API_KEY"], "UTF-8")
-    message = bytes(id_string, "UTF-8")
-    hashed_code = hmac.new(key, message, hashlib.sha1).digest()
-    digest = base64.encodebytes(hashed_code).decode("UTF-8")
+    key: bytes = bytes(config["API_KEY"], "UTF-8")
+    message: bytes = bytes(id_string, "UTF-8")
+    hashed_code: bytes = hmac.new(key, message, hashlib.sha1).digest()
+    digest: str = base64.encodebytes(hashed_code).decode("UTF-8")
 
-    auth_string = "Summon {};{}".format(config["ACCESS_ID"], digest)
+    auth_string: str = "Summon {};{}".format(config["ACCESS_ID"], digest)
     return auth_string.replace("\n", "")
 
 
@@ -62,19 +65,19 @@ def build_headers(query) -> dict[str, str]:
     Returns:
         dict: request headers for Summon API query
     """
-    date = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    date: str = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
 
     # sort and decode query
-    query_string = unquote_plus("&".join(sorted(query.split("&"))))
+    query_string: str = unquote_plus("&".join(sorted(query.split("&"))))
 
-    id_string = (
+    id_string: str = (
         "\n".join(
             [config["ACCEPT"], date, config["HOST"], config["PATH"], query_string]
         )
         + "\n"
     )
 
-    auth_string = build_auth_string(id_string)
+    auth_string: str = build_auth_string(id_string)
 
     return {
         "Accept": config["ACCEPT"],
@@ -110,7 +113,7 @@ def search_link(qs) -> str:
     return f"https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?{qs}"
 
 
-def search(params) -> list:
+def search(params) -> list[dict]:
     """
     Searches the Summon API with the provided parameters.
 
@@ -120,13 +123,13 @@ def search(params) -> list:
     Returns:
         dict: JSON response from Summon API containing search results, etc.
     """
-    host = "api.summon.serialssolutions.com"
-    path = "/2.0.0/search"
-    qs = encode_query(params)
+    host: str = "api.summon.serialssolutions.com"
+    path: str = "/2.0.0/search"
+    qs: str = encode_query(params)
 
-    headers = build_headers(qs)
+    headers: dict[str, str] = build_headers(qs)
 
-    url = "https://{}{}?{}".format(host, path, qs)
+    url: str = "https://{}{}?{}".format(host, path, qs)
     # print normal, non-API search URL for debugging
     if args.debug:
         print(search_link(qs))
@@ -134,7 +137,7 @@ def search(params) -> list:
     # TODO retry with a delay in between?
     time.sleep(1)
     try:
-        response = requests.get(url, headers=headers)
+        response: requests.Response = requests.get(url, headers=headers)
         response.raise_for_status()
         return response.json()["documents"]
     except requests.exceptions.ConnectionError as e:
@@ -145,7 +148,7 @@ def search(params) -> list:
         return []
 
 
-def result(documents):
+def result(documents: list[dict]) -> None:
     """
     Print output/summary of search results.
     """
@@ -162,26 +165,26 @@ def result(documents):
         print("")
 
 
-def get_first_author(record):
+def get_first_author(record) -> str | None:
     """
     Get author from MARC record. Pymarc's record.author includes identifier &
     dates which messes up Summon query.
     """
-    author = record.get_fields("100")
+    author: list[Field] = record.get_fields("100")
     if len(author):
         return author[0].get_subfields("a")[0]
     else:
         return None
 
 
-def make_query(record) -> dict[str, str]:
+def make_query(record: Record) -> dict[str, str]:
     """
     Create Summon query string from MARC record.
     """
-    title = record.title
-    author = get_first_author(record)
+    title: str | None = record.title  # technically can be None but not our data
+    author: str | None = get_first_author(record)
 
-    params = {
+    params: dict[str, str] = {
         "s.q": f"(TitleCombined:({title}))",
         "s.fvf": "SourceType,Library Catalog,f",
     }
@@ -190,7 +193,7 @@ def make_query(record) -> dict[str, str]:
     return params
 
 
-def summarize():
+def summarize() -> None:
     print(
         f"""Total Records:      {summary["Records"]}
 Had Search Results: {summary["Found"]}
@@ -203,7 +206,7 @@ HTTP Errors:        {summary["HTTP Errors"]}
         print(f"Malformed Records: {summary['Malformed Records']}")
 
 
-def write_missing(missing):
+def write_missing(missing) -> None:
     """
     Write missing records to CSV file.
     """
@@ -222,8 +225,8 @@ def write_missing(missing):
             )
             for record in missing:
                 # null for non-Koha records
-                biblionumber = record.get("999", {}).get("c")
-                qs = encode_query(make_query(record))
+                biblionumber: str | None = record.get("999", {}).get("c")
+                qs: str = encode_query(make_query(record))
                 writer.writerow(
                     [
                         biblionumber,
@@ -252,11 +255,11 @@ def num_only(isbn: str) -> str:
     return isbn.split(" ")[0]
 
 
-def process_marc(file):
+def process_marc(file) -> None:
     """
     Parse MARC file and search for items.
     """
-    missing = []
+    missing: list[Record] = []
     reader = MARCReader(open(file, "rb"))
     for i, record in enumerate(reader):
         if args.count and i >= args.count:
@@ -264,7 +267,7 @@ def process_marc(file):
         if record:
             # skip suppressed records 942$n = 1
             try:
-                suppressed = record.get_fields("942")[0].get_subfields("n")[0]
+                suppressed: str = record.get_fields("942")[0].get_subfields("n")[0]
                 if suppressed == "1" or suppressed.lower() == "true":
                     continue
             except IndexError:
@@ -272,13 +275,17 @@ def process_marc(file):
 
             summary["Records"] += 1
 
-            isbn_fields = record.get_fields("020")
-            isbn_subfields = [field.get_subfields("a") for field in isbn_fields]
-            isbns = [num_only(isbn) for sublist in isbn_subfields for isbn in sublist]
+            isbn_fields: List[Field] = record.get_fields("020")
+            isbn_subfields: List[List[str]] = [
+                field.get_subfields("a") for field in isbn_fields
+            ]
+            isbns: List[str] = [
+                num_only(isbn) for sublist in isbn_subfields for isbn in sublist
+            ]
             summary["Had ISBN"] += 1 if len(isbns) else 0
 
-            params = make_query(record)
-            docs = search(params)
+            params: dict[str, str] = make_query(record)
+            docs: list[dict] = search(params)
             if args.debug:
                 result(docs)
 
@@ -300,7 +307,7 @@ def process_marc(file):
         write_missing(missing)
 
 
-def quote_if_unquoted(s):
+def quote_if_unquoted(s: str) -> str:
     """
     Quote string if it's not already quoted.
     """
@@ -310,13 +317,13 @@ def quote_if_unquoted(s):
         return f'"{s}"'
 
 
-def signal_handler(sig, frame):
+def signal_handler(sig, frame) -> None:
     print("Caught SIGINT, printing summary")
     summarize()
     sys.exit(1)
 
 
-def main():
+def main() -> None:
     # if cli arg looks like a MARC file, parse it & search for items
     # otherwise treat as a title string for search
     if args.query.endswith(".mrc") or args.query.endswith(".marc"):
@@ -348,7 +355,7 @@ if __name__ == "__main__":
         "-m", "--missing", help="write list of missing records to CSV file"
     )
     global args
-    args = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args()
 
     # catch SIGINT and print summary
     signal.signal(signal.SIGINT, signal_handler)
