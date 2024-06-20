@@ -17,7 +17,7 @@ config = {
 # log to data/log.txt and stdout
 logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(
-    filename=config.get("LOG_FILE", "data/log.txt"),
+    filename=config.get("SUMMON_LOG_FILE", "data/log.txt"),
     level=logging.INFO,
     format=logformat,
 )

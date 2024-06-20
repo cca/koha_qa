@@ -29,6 +29,10 @@ options:
   -h, --help    show this help message and exit
 ```
 
+## linkcheck.py
+
+Check URLs in Koha 856$u fields. See [the readme](./linkcheck/readme.md) for details.
+
 ## summon.py
 
 Check if MARC record(s) are in CCA's Summon index.
