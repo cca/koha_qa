@@ -42,6 +42,7 @@ def quote(list):
 
 
 def main() -> None:
+    count = 0
     report = httpx.get(config["LINKCHECK_REPORT"])
     for bib in report.json():
         # bibs are arrays like [urls string, title, biblionumber]
@@ -49,6 +50,9 @@ def main() -> None:
         # urls are separated by " | "
         urls = urls.split(" | ")
         for url in urls:
+            count += 1
+            if config.get("LINKCHECK_LIMIT") and count > int(config["LINKCHECK_LIMIT"]):
+                break
             try:
                 r = httpx.get(url, follow_redirects=True)
                 status = r.status_code
@@ -108,3 +112,4 @@ if __name__ == "__main__":
     # TODO but the script keeps running
     signal.signal(signal.SIGINT, signal_handler)
     main()
+    summarize()

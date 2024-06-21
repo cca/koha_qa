@@ -6,6 +6,7 @@ Takes a public Koha report and checks each URL (`856$u`) to see if they resolve 
 
 The script uses the same .env file as the root project or it can take environment variables.
 
+- `LINKCHECK_LIMIT` number of links to check (leave undefined for all of them)
 - `LINKCHECK_REPORT` URL to a Koha report that returns item URLs (see [report.sql](./report.sql)). Report must be Public.
 - `LINKCHECK_OPAC_URL` catalog link for individual records, should include `biblionumber={id}` in it (id is interpolated)
 - `LINKCHECK_LOGFILE` path to logged CSV, defaults to the data dir named "YYYY-MM-DD-linkcheck.csv" with today's date
