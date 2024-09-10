@@ -1,0 +1,26 @@
+[project]
+name = "koha_qa"
+version = "0.1.0"
+description = "MARC record utilities for Koha & Summon"
+authors = [{name = "Eric Phetteplace", email = "ephetteplace@cca.edu"}]
+readme = "readme.md"
+license = {file = "LICENSE.txt"}
+keywords = ["koha", "marc", "summon"]
+classifiers = [
+     "Development Status :: 5 - Production/Stable",
+      "Programming Language :: Python :: 3.11"
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click==8.1.7",
+    "httpx==0.27.2",
+    "pymarc==5.2.2",
+    "pysftp==0.2.9",
+    "python-dotenv==1.0.1",
+    "requests==2.32.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/cca/koha_qa"
+Issues = "https://github.com/cca/koha_qa/issues"
+Repository = "https://github.com/cca/koha_qa"

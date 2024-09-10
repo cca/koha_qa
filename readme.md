@@ -6,8 +6,10 @@ Various bibliographic metadata tools.
 
 To use summon.py, obtain a Summon API key from the Ex Libris Developer Network, see [their documentation](https://knowledge.exlibrisgroup.com/Summon/Product_Documentation/Configuring_The_Summon_Service/Configurations_Outside_of_the_Summon_Administration_Console/Summon%3A_Using_the_Summon_API). To use summon-update.py, add our Summon SFTP credentials to the .env file.
 
+This project is an experiment in using [uv](https://github.com/astral-sh/uv) for python package management. Prefix python commands with `uv run` to use the project's virtual environment.
+
 ```sh
-pipenv install
+uv sync
 cp example.env .env
 vim .env # edit in secret values
 ```
