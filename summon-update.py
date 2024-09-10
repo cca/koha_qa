@@ -27,7 +27,7 @@ console.setLevel(logging.INFO)
 formatter = logging.Formatter(logformat)
 console.setFormatter(formatter)
 logging.getLogger("summon_update").addHandler(console)
-logger = logging.getLogger("summon_update")
+logger: logging.Logger = logging.getLogger("summon_update")
 
 # fix pysftp bug "AttributeError: 'Connection' object has no attribute '_sftp_live'"
 cnopts = pysftp.CnOpts()
@@ -72,7 +72,7 @@ def put_file(
     with open(file_path, "rb") as fh:
         reader = MARCReader(fh)
         # count=1 for non-MARC files if we don't include the isinstance check
-        count = sum(1 for record in reader if isinstance(record, Record))
+        count: int = sum(1 for record in reader if isinstance(record, Record))
         if count and count != 0:
             logger.info(f"Number of records in {file_path}: {count}")
         else:
@@ -81,7 +81,7 @@ def put_file(
             )
             exit()
 
-    remote_path = f"{filetype}/{rename(filetype)}"
+    remote_path: str = f"{filetype}/{rename(filetype)}"
     with pysftp.Connection(
         cnopts=cnopts,
         host=config["SUMMON_SFTP_HOST"],
