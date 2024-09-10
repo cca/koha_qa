@@ -53,16 +53,16 @@ def rename(filetype: str) -> str:
     "-t",
     "--type",
     "filetype",
-    default="updates",
-    type=click.Choice(["updates", "deletes", "full"]),
     help="type of update",
+    required=True,
+    type=click.Choice(["updates", "deletes", "full"]),
 )
 @click.option(
     "-d", "--debug", is_flag=True, help="enable SFTP debug logging", flag_value=1
 )
 def put_file(
     file_path: str,
-    filetype: Literal["updates", "deletes", "full"] = "updates",
+    filetype: Literal["updates", "deletes", "full"],
     debug: Literal[1, None] = None,
 ) -> None:
     """
