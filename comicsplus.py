@@ -17,7 +17,7 @@ def is_update_or_delete(record):
     # ! Comics Plus doesn't seem to use "c" for corrected records
     if status in ["c", "d"]:
         print(
-            f"Warning: {'corrected' if status == 'c' else 'deleted'} record: {record.title}"
+            f"Warning {'corrected' if status == 'c' else 'deleted'} record: {record.title}"
         )
 
 

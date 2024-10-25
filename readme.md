@@ -14,6 +14,19 @@ cp example.env .env
 vim .env # edit in secret values
 ```
 
+## break.py
+
+Split MARC files into smaller subsets named like `records-1.mrc`, `records-2.mrc`, etc. This is the same as MARCEdit's MARCSplit feature if you would prefer not to use the command line. Koha can only process so many records at once without failing so we tend to batch record imports at 500 or 1000 records at a time.
+
+```sh
+Usage: break.py [OPTIONS] N file.mrc
+
+  break MARC file into smaller ones of N or less records
+
+Options:
+  -h, --help  Show this message and exit.
+```
+
 ## comicsplus.py
 
 Add our proxy server prefix to Comics Plus MARC records and warn if there are any corrected or deleted records. See [our wiki page](https://sites.google.com/cca.edu/librarieswiki/home/cataloging/ebook-import/comicsplus) on Comics Plus for more information and why we cannot accomplish this with Koha's MARC modification templates.
