@@ -262,7 +262,7 @@ def process_marc(file) -> None:
     missing: list[Record] = []
     reader = MARCReader(open(file, "rb"))
     for i, record in enumerate(reader):
-        if args.count and i >= args.count:
+        if args.limit and i >= args.limit:
             break
         if record:
             # skip suppressed records 942$n = 1
@@ -344,7 +344,9 @@ if __name__ == "__main__":
         type=str,
         help="Title or MARC file to search for",
     )
-    parser.add_argument("-c", "--count", type=int, help="Number of searches to run")
+    parser.add_argument(
+        "-l", "--limit", type=int, help="Number of searches to run", metavar="N"
+    )
     parser.add_argument(
         "-d",
         "--debug",
@@ -352,7 +354,10 @@ if __name__ == "__main__":
         help="Debug mode (print query links and search results)",
     )
     parser.add_argument(
-        "-m", "--missing", help="write list of missing records to CSV file"
+        "-m",
+        "--missing",
+        help="write list of missing records to CSV file",
+        metavar="missing.csv",
     )
     global args
     args: argparse.Namespace = parser.parse_args()
