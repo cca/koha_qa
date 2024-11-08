@@ -14,6 +14,8 @@ cp example.env .env
 vim .env # edit in secret values
 ```
 
+To see outdated dependencies, run `uv tree --outdated`. To upgrade a direct dependency, run `uv add package==x.y.z` where "package" is the dep and "x.y.z" is the target version. To upgrade transitive dependencies, delete and recreate the lockfile: `rm uv.lock && uv lock`.
+
 ## break.py
 
 Split MARC files into smaller subsets named like `records-1.mrc`, `records-2.mrc`, etc. This is the same as MARCEdit's MARCSplit feature if you would prefer not to use the command line. Koha can only process so many records at once without failing so we tend to batch record imports at 500 or 1000 records at a time.
