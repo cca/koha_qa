@@ -6,8 +6,9 @@ to test for in the future.
 
 import argparse
 from datetime import date
+import re
 
-from pymarc import MARCReader, MARCWriter, Record
+from pymarc import MARCReader, MARCWriter, Record, Field, Subfield
 
 
 def is_update_or_delete(record):
@@ -41,11 +42,129 @@ def proxy_856(field):
             )
 
 
-def process_record(record) -> Record:
+def fix_538(record: Record):
+    # Remove junk 538s
+    for field in record.get_fields("538"):
+        a = field.get("a")
+        if type(a) == str and "Mode of access: World Wide Web" in a:
+            record.remove_field(field)
+        if type(a) == str and "Requires a valid library card and registration" in a:
+            record.remove_field(field)
+        if type(a) == str and "System requirements:" in a:
+            record.remove_field(field)
+
+    # add a better-worded 538 but don't duplicate it
+    has_our_538 = False
+    msg = 'Use the "Sign Up" link to create a LibraryPass account. You must have an account to read the ebook.'
+    for field in record.get_fields("538"):
+        a = field.get("a")
+        if type(a) == str and msg in a:
+            has_our_538 = True
+    if not has_our_538:
+        record.add_ordered_field(
+            Field(
+                tag="539",
+                subfields=[
+                    Subfield(
+                        code="a",
+                        value='Use the "Sign Up" link to create a LibraryPass account. You must have an account to read the ebook.',
+                    )
+                ],
+            )
+        )
+
+
+def rda_ebook(record: Record):
+    """Remove 245$h GMD and add RDA 336/337/338 fields"""
+    for field in record.get_fields("245"):
+        field.delete_subfield("h")
+
+    # 33x fields
+    if not record.get("336"):
+        record.add_ordered_field(
+            Field(
+                tag="336",
+                subfields=[
+                    Subfield(code="a", value="text"),
+                    Subfield(code="b", value="txt"),
+                    Subfield(code="2", value="rdacontent"),
+                ],
+            )
+        )
+        # graphic novels have text _and_ image content
+        record.add_ordered_field(
+            Field(
+                tag="336",
+                subfields=[
+                    Subfield(code="a", value="still image"),
+                    Subfield(code="b", value="sti"),
+                    Subfield(code="2", value="rdacontent"),
+                ],
+            )
+        )
+    if not record.get("337"):
+        record.add_ordered_field(
+            Field(
+                tag="337",
+                subfields=[
+                    Subfield(code="a", value="computer"),
+                    Subfield(code="b", value="c"),
+                    Subfield(code="2", value="rdamedia"),
+                ],
+            )
+        )
+    if not record.get("338"):
+        record.add_ordered_field(
+            Field(
+                tag="338",
+                subfields=[
+                    Subfield(code="a", value="online resource"),
+                    Subfield(code="b", value="cr"),
+                    Subfield(code="2", value="rdacarrier"),
+                ],
+            )
+        )
+
+
+def remove_librarypass(record: Record):
+    """Remove references to LibraryPass in 245, 710"""
+    for field in record.get_fields("245"):
+        c = field.get("c")
+        if type(c) == str and ("Library Pass" in c or "LibraryPass" in c):
+            field.delete_subfield("c")
+    for field in record.get_fields("710"):
+        a = field.get("a")
+        if type(a) == str and ("Library Pass" in a or "LibraryPass" in a):
+            record.remove_field(field)
+
+
+def add_cca(record: Record):
+    field = record.get("040")
+    if field:
+        if "CC9" not in field.get_subfields("a", "b", "c", "d"):
+            field.add_subfield(code="d", value="CC9")
+    else:
+        # this should probably never happen but...
+        record.add_ordered_field(
+            Field(
+                tag="040",
+                subfields=[
+                    Subfield(code="a", value="CC9"),
+                    Subfield(code="e", value="rda"),
+                ],
+            )
+        )
+
+
+def process_record(record: Record) -> Record:
     """Process MARC record"""
     is_update_or_delete(record)
     for field in record.get_fields("856"):
         proxy_856(field)
+    fix_538(record)
+    rda_ebook(record)
+    remove_librarypass(record)
+    add_cca(record)
     return record
 
 
@@ -54,8 +173,9 @@ def process_marc(file, output):
     reader = MARCReader(open(file, "rb"))
     writer = MARCWriter(open(output, "wb"))
     for record in reader:
-        new_record = process_record(record)
-        writer.write(new_record)
+        if record:
+            new_record = process_record(record)
+            writer.write(new_record)
 
 
 if __name__ == "__main__":
