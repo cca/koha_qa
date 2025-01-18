@@ -6,9 +6,16 @@ to test for in the future.
 
 import argparse
 from datetime import date
-import re
 
-from pymarc import MARCReader, MARCWriter, Record, Field, Subfield
+from pymarc import (
+    Indicators,
+    MARCReader,
+    MARCWriter,
+    Record,
+    Field,
+    Subfield,
+    Indicators,
+)
 
 
 def is_update_or_delete(record):
@@ -126,6 +133,26 @@ def rda_ebook(record: Record):
         )
 
 
+def lcgft(record: Record):
+    """Add LC Genre/Form Term for Graphic novels"""
+    has_gn = False
+    for field in record.get_fields("655"):
+        a = field.get("a")
+        if type(a) == str and "Graphic novels" in a:
+            has_gn = True
+    if not has_gn:
+        record.add_ordered_field(
+            Field(
+                tag="655",
+                indicators=Indicators("", "7"),
+                subfields=[
+                    Subfield(code="a", value="Graphic novels"),
+                    Subfield(code="2", value="lcgft"),
+                ],
+            )
+        )
+
+
 def remove_librarypass(record: Record):
     """Remove references to LibraryPass in 245, 710"""
     for field in record.get_fields("245"):
@@ -163,6 +190,7 @@ def process_record(record: Record) -> Record:
         proxy_856(field)
     fix_538(record)
     rda_ebook(record)
+    lcgft(record)
     remove_librarypass(record)
     add_cca(record)
     return record
