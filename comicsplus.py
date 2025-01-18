@@ -63,7 +63,7 @@ def fix_538(record: Record):
     if not has_our_538:
         record.add_ordered_field(
             Field(
-                tag="539",
+                tag="538",
                 subfields=[
                     Subfield(
                         code="a",
