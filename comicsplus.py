@@ -144,7 +144,7 @@ def lcgft(record: Record):
         record.add_ordered_field(
             Field(
                 tag="655",
-                indicators=Indicators("", "7"),
+                indicators=Indicators(" ", "7"),
                 subfields=[
                     Subfield(code="a", value="Graphic novels"),
                     Subfield(code="2", value="lcgft"),
