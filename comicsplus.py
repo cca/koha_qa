@@ -183,6 +183,18 @@ def add_cca(record: Record):
         )
 
 
+def koha_ebook(record: Record):
+    """Koha stores local information in 942, $c is default item type"""
+    field = record.get("942")
+    if field:
+        if "EBOOK" not in field.get_subfields("c"):
+            field.add_subfield(code="c", value="EBOOK")
+    else:
+        record.add_field(
+            Field(tag="942", subfields=[Subfield(code="c", value="EBOOK")])
+        )
+
+
 def process_record(record: Record) -> Record:
     """Process MARC record"""
     is_update_or_delete(record)
