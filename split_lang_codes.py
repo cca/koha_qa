@@ -1,9 +1,9 @@
 # a lot our 041 language codes are all stuffed into one $a subfield
 # instead of a separate $a for each language code
 # 041 1_ $aengjpn -> 041 1_ $aeng$ajpn
-from io import BufferedReader
 from pathlib import Path
-from typing import List, Set
+from typing import Set
+
 import click
 from pymarc import Record, Subfield, MARCReader, MARCWriter, Field
 
@@ -561,7 +561,7 @@ def split_lang_codes(record: Record, debug: bool) -> Record:
                                     f"Warning: unrecognized language code {split_code} after splitting {field} in record {record.title}. This code will be removed from the record.",
                                     err=True,
                                 )
-                new_field = Field(
+                new_field: Field = Field(
                     tag="041",
                     indicators=field.indicators,
                     subfields=[Subfield(code="a", value=code) for code in valid_codes],
