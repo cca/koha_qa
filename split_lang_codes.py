@@ -7,7 +7,8 @@ from typing import Set
 import click
 from pymarc import Record, Subfield, MARCReader, MARCWriter, Field
 
-# List of ISO 639.2 language codes https://www.loc.gov/standards/iso639-2/php/code_list.php
+# List of ISO 639.2 language codes
+# https://www.loc.gov/standards/iso639-2/php/code_list.php
 codes: list[str] = [
     "aar",
     "abk",
@@ -550,12 +551,19 @@ def split_lang_codes(record: Record, debug: bool) -> Record:
                 for code in invalid_codes:
                     if len(code) % 3 == 0:
                         for i in range(0, len(code), 3):
+                            # this step also fixes uppercase codes
                             split_code: str = code[i : i + 3].lower()
                             if split_code in codes:
                                 valid_codes.add(split_code)
                             # we have a number of records using the wrong code for Japanese
                             elif split_code == "jap":
                                 valid_codes.add("jpn")
+                            elif split_code == "esk":
+                                # NOTE: assumes language is Inuktitut & not another Inuit language
+                                # like Iñupiaq (ipk). This is true for our collection though & Inuktitut
+                                # is the most common. Note that `iku` also covers Inuinnaqtun.
+                                # https://en.wikipedia.org/wiki/Eskaleut_languages#Internal_classification
+                                valid_codes.add("iku")
                             else:
                                 click.echo(
                                     f"Warning: unrecognized language code {split_code} after splitting {field} in record {record.title}. This code will be removed from the record.",
