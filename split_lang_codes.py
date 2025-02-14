@@ -2,10 +2,12 @@
 # instead of a separate $a for each language code
 # 041 1_ $aengjpn -> 041 1_ $aeng$ajpn
 from pathlib import Path
-from typing import Set
+import sys
+from typing import Any, Literal, Set
+import unittest
 
 import click
-from pymarc import Record, Subfield, MARCReader, MARCWriter, Field
+from pymarc import Indicators, Record, Subfield, MARCReader, MARCWriter, Field
 
 # List of ISO 639.2 language codes
 # https://www.loc.gov/standards/iso639-2/php/code_list.php
@@ -520,11 +522,31 @@ codes: list[str] = [
 ]
 
 
-def split_lang_codes(record: Record, debug: bool) -> Record:
-    """Split multiple language codes in 041 $a into separate subfields"""
+def sort_subfield_codes(code_list: list[str]) -> tuple[Set[str], Set[str]]:
+    """Sort subfield codes into sets of invalid and valid ones"""
     invalid_codes: Set[str] = set()
-    invalid_3letter_codes: Set[str] = set()
     valid_codes: Set[str] = set()
+    for code in code_list:
+        if code not in codes:
+            invalid_codes.add(code)
+        else:
+            valid_codes.add(code)
+    return invalid_codes, valid_codes
+
+
+def copy_non_a_subfields(original_field: Field, new_field: Field) -> None:
+    """Copies $a subfields from one field to another"""
+    # We need to preserve other subfields when we reconstruct $a ones
+    non_a_subfields: dict[str, list[Any]] = original_field.subfields_as_dict()
+    if original_field.get("a"):
+        non_a_subfields.pop("a")
+    for letter in non_a_subfields.keys():
+        for value in non_a_subfields[letter]:
+            new_field.add_subfield(code=letter, value=value)
+
+
+def split_lang_codes(record: Record, debug: bool = False) -> Record:
+    """Split multiple language codes in 041 $a into separate subfields"""
     for field in record.get_fields("041"):
         # only process fields that use the MARC language codes
         if field.indicator2 == " ":
@@ -532,17 +554,7 @@ def split_lang_codes(record: Record, debug: bool) -> Record:
                 click.echo(f"Processing field {field}")
 
             # sort subfields into categories
-            for code in field.get_subfields("a"):
-                if len(code) != 3:
-                    invalid_codes.add(code)
-                elif len(code) == 3 and code not in codes:
-                    click.echo(
-                        f"Warning: unrecognized language code {code} in field {field} in record {record.title}",
-                        err=True,
-                    )
-                    invalid_3letter_codes.add(code)
-                else:
-                    valid_codes.add(code)
+            invalid_codes, valid_codes = sort_subfield_codes(field.get_subfields("a"))
 
             if invalid_codes:
                 if debug:
@@ -569,22 +581,182 @@ def split_lang_codes(record: Record, debug: bool) -> Record:
                                     f"Warning: unrecognized language code {split_code} after splitting {field} in record {record.title}. This code will be removed from the record.",
                                     err=True,
                                 )
-                new_field: Field = Field(
-                    tag="041",
-                    indicators=field.indicators,
-                    subfields=[Subfield(code="a", value=code) for code in valid_codes],
-                )
+                    else:
+                        click.echo(
+                            f"Warning: length of language code {code} in {field} in record {record.title} is not divisible by 3 so we don't know how to split it into valid codes. It will be removed from the record.",
+                            err=True,
+                        )
+                if len(valid_codes):
+                    new_field: Field = Field(
+                        tag="041",
+                        indicators=field.indicators,
+                        subfields=[
+                            Subfield(code="a", value=code) for code in valid_codes
+                        ],
+                    )
+                    copy_non_a_subfields(field, new_field)
 
                 if debug:
                     click.echo(f"New field: {new_field}")
 
                 record.remove_field(field)
-                record.add_ordered_field(new_field)
+                if "new_field" in locals():
+                    record.add_ordered_field(new_field)
 
     return record
 
 
-@click.command()
+def make_041(subfields: list[tuple[str, str]]) -> Field:
+    """Make a 041 field, helper functions for tests"""
+    return Field(
+        tag="041",
+        indicators=Indicators("0", " "),
+        subfields=[Subfield(code=c, value=v) for c, v in subfields],
+    )
+
+
+def make_record(subfields: list[tuple[str, str]]) -> Record:
+    """Same as above except it returns a record with just a 041 field"""
+    r = Record()
+    r.add_field(make_041(subfields))
+    return r
+
+
+class SplitLangCodesTests(unittest.TestCase):
+    def test_sort_subfield_codes(self) -> None:
+        # 1 valid, 1 invalid
+        i, v = sort_subfield_codes(["eng", "xxx"])
+        assert "xxx" in i
+        assert "eng" in v
+        # 2 valid codes
+        i, v = sort_subfield_codes(["eng", "jpn"])
+        assert len(i) == 0
+        assert "eng" in v
+        assert "jpn" in v
+        # 1 invalid
+        i, v = sort_subfield_codes(["xxx"])
+        assert "xxx" in i
+        assert len(v) == 0
+        # 1 invalid - too long
+        i, v = sort_subfield_codes(["english"])
+        assert "english" in i
+        assert len(v) == 0
+        # 2 invalid
+        i, v = sort_subfield_codes(["english", "xxx"])
+        assert "english" in i
+        assert "xxx" in i
+        assert len(v) == 0
+
+    def test_copy_non_a_subfields(self) -> None:
+        # no non-a subfields to copy
+        f1: Field = make_041([("a", "eng")])
+        f2: Field = make_041([("a", "eng")])
+        copy_non_a_subfields(f1, f2)
+        self.assertListEqual(
+            f1.get_subfields("a", "b", "c"), f2.get_subfields("a", "b", "c")
+        )
+
+        # copy 1 h subfield
+        f1: Field = make_041([("a", "eng"), ("h", "ger")])
+        f2: Field = make_041([("a", "eng")])
+        copy_non_a_subfields(f1, f2)
+        self.assertListEqual(f1.get_subfields("h"), f2.get_subfields("h"))
+
+        # copy 2 non-a subfields
+        f1: Field = make_041([("b", "iku"), ("h", "ger")])
+        f2: Field = make_041([("a", "eng")])
+        copy_non_a_subfields(f1, f2)
+        self.assertListEqual(f1.get_subfields("b"), f2.get_subfields("b"))
+        self.assertListEqual(f1.get_subfields("h"), f2.get_subfields("h"))
+
+    def test_split_lang_codes(self) -> None:
+        # NOTE: all the type ignores are b/c Record.get(tag) can return None
+        # but we assert that isinstance(Record.get(tag), Field) anyways.
+
+        # valid record with one subfield, no changes
+        r: Record = make_record([("a", "eng")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert r.get("041").get_subfields("a")[0] == "eng"  # type: ignore
+
+        # valid record with two subfields
+        r: Record = make_record([("a", "eng"), ("a", "fre")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert "eng" in r.get("041").get_subfields("a")  # type: ignore
+        assert "fre" in r.get("041").get_subfields("a")  # type: ignore
+
+        # invalid combined code is fixed
+        r: Record = make_record([("a", "engspa")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert "eng" in r.get("041").get_subfields("a")  # type: ignore
+        assert "spa" in r.get("041").get_subfields("a")  # type: ignore
+
+        # invalid combined code is fixed alongside valid one
+        r: Record = make_record([("a", "engspa"), ("a", "kor")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert "eng" in r.get("041").get_subfields("a")  # type: ignore
+        assert "spa" in r.get("041").get_subfields("a")  # type: ignore
+        assert "kor" in r.get("041").get_subfields("a")  # type: ignore
+
+        # invalid code that can't be fixed is dropped
+        r: Record = make_record([("a", "oijasidojaisd")])
+        r = split_lang_codes(r)
+        assert r.get("041") == None
+
+        # valid code alongside invalid one that can't be fixed
+        r: Record = make_record([("a", "oijasidojaisd"), ("a", "eng")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert len(r.get("041").get_subfields("a")) == 1  # type: ignore
+        assert "eng" in r.get("041").get_subfields("a")  # type: ignore
+
+        # convert esk -> iku, jap -> jpn
+        r: Record = make_record([("a", "esk"), ("a", "jap")])
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert len(r.get("041").get_subfields("a")) == 2  # type: ignore
+        assert "iku" in r.get("041").get_subfields("a")  # type: ignore
+        assert "jpn" in r.get("041").get_subfields("a")  # type: ignore
+
+        # skip field using non-MARC codes (2nd indicator is not null)
+        r = Record()
+        r.add_field(
+            Field(
+                tag="041",
+                indicators=Indicators("1", "7"),
+                subfields=[
+                    Subfield(code="a", value="en"),
+                    Subfield(code="2", value="iso639-1"),
+                ],
+            )
+        )
+        r = split_lang_codes(r)
+        assert isinstance(r.get("041"), Field)
+        assert len(r.get("041").get_subfields("a")) == 1  # type: ignore
+        assert "en" in r.get("041").get_subfields("a")  # type: ignore
+
+
+def run_tests(verbose: bool) -> Literal[0, 1]:
+    loader = unittest.TestLoader()
+    suite: unittest.TestSuite = loader.loadTestsFromTestCase(SplitLangCodesTests)
+    runner = unittest.TextTestRunner(verbosity=2 if verbose else 0)
+    result: unittest.TextTestResult = runner.run(suite)
+
+    # Return 0 for success, 1 for failures
+    return 0 if result.wasSuccessful() else 1
+
+
+@click.group()
+@click.help_option("--help", "-h")
+def cli():
+    """Takes MARC 041 language subfields where multiple language codes are in a single $a subfield and splits them into separate subfields. Example: 041 1_ $a engjpn -> 041 1_ $a eng $a jpn (spaces added for readability)"""
+    pass
+
+
+@cli.command()
 @click.help_option("--help", "-h")
 @click.argument(
     "input",
@@ -598,8 +770,8 @@ def split_lang_codes(record: Record, debug: bool) -> Record:
     required=False,
 )
 @click.option("--debug", "-d", is_flag=True, help="Print changes, do not write to file")
-def main(input: Path, output: Path, debug: bool) -> None:
-    """Takes MARC 041 language subfields where multiple language codes are in a single $a subfield and splits them into separate subfields. Example: 041 1_ $a engjpn -> 041 1_ $a eng $a jpn (spaces added for readability)"""
+def fix(input: Path, output: Path, debug: bool) -> None:
+    """Fix input records"""
     with open(input, "rb") as input_fh:
         if output:
             writer = MARCWriter(open(output, "wb"))
@@ -613,5 +785,12 @@ def main(input: Path, output: Path, debug: bool) -> None:
             writer.close()
 
 
+@cli.command()
+@click.option("--verbose", "-v", is_flag=True, help="more verbose test output")
+def test(verbose: bool):
+    """Run the test suite."""
+    sys.exit(run_tests(verbose))
+
+
 if __name__ == "__main__":
-    main()
+    cli()
