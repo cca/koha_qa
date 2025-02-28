@@ -205,6 +205,7 @@ def process_record(record: Record) -> Record:
     lcgft(record)
     remove_librarypass(record)
     add_cca(record)
+    koha_ebook(record)
     return record
 
 
