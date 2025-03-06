@@ -535,7 +535,7 @@ def sort_subfield_codes(code_list: list[str]) -> tuple[Set[str], Set[str]]:
 
 
 def copy_non_a_subfields(original_field: Field, new_field: Field) -> None:
-    """Copies $a subfields from one field to another"""
+    """Copies non-$a subfields (e.g. $h original lang) from one field to another"""
     # We need to preserve other subfields when we reconstruct $a ones
     non_a_subfields: dict[str, list[Any]] = original_field.subfields_as_dict()
     if original_field.get("a"):
