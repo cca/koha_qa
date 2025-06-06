@@ -27,12 +27,12 @@ Options:
   -h, --help  Show this message and exit.
 ```
 
-## comicsplus.py
+## comics_plus.py
 
 Add our proxy server prefix to Comics Plus MARC records and warn if there are any corrected or deleted records. See [our wiki page](https://sites.google.com/cca.edu/librarieswiki/home/cataloging/ebook-import/comicsplus) on Comics Plus for more information and why we cannot accomplish this with Koha's MARC modification templates.
 
 ```sh
-usage: comicsplus.py [-h] <file.mrc> [<output.mrc>]
+usage: comics_plus.py [-h] <file.mrc> [<output.mrc>]
 
 Process Comics Plus MARC records
 
@@ -44,7 +44,7 @@ options:
   -h, --help    show this help message and exit
 ```
 
-## linkcheck.py
+## link_check.py
 
 Check URLs in Koha 856$u fields. See [the readme](./linkcheck/readme.md) for details.
 
@@ -76,12 +76,12 @@ ISBN Matches:       45
 
 A record is considered "missing" if there is no ISBN match in Summon, records without ISBNs are not considered missing. The Summon search is a title search, so records with short, generic titles like "Art Now" can be considered "missing" because the record with the matching ISBN isn't in the first page of 10 search results returned.
 
-## summon-update.py
+## summon_update.py
 
 Update our Summon index with a file of MARC records. Can delete or update records. A "full" update requires contacting support but this script can upload the file. Export records from Koha staff side > Cataloging > [Export data](https://library-staff.cca.edu/cgi-bin/koha/tools/export.pl).
 
 ```sh
-Usage: summon-update.py [OPTIONS] FILE_PATH
+Usage: summon_update.py [OPTIONS] FILE_PATH
 
   Puts a file to the Summon SFTP server.
 
