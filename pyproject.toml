@@ -12,11 +12,11 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "click==8.1.8",
+    "click==8.2.1",
     "httpx==0.28.1",
     "pymarc==5.2.3",
     "pysftp==0.2.9",
-    "python-dotenv==1.0.1",
+    "python-dotenv==1.1.0",
     "requests==2.32.3",
 ]
 
