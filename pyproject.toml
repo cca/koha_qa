@@ -14,9 +14,9 @@ requires-python = ">=3.11"
 dependencies = [
     "click==8.2.1",
     "httpx==0.28.1",
-    "pymarc==5.2.3",
+    "pymarc>=5.3",
     "pysftp==0.2.9",
-    "python-dotenv==1.1.0",
+    "python-dotenv>=1.1",
     "requests==2.32.4",
 ]
 
