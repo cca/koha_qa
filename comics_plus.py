@@ -7,6 +7,8 @@ to test for in the future.
 import argparse
 from datetime import date
 
+from pydantic import ValidationError
+from pydantic_marc.models import MarcRecord
 from pymarc import (
     Indicators,
     MARCReader,
@@ -209,13 +211,29 @@ def process_record(record: Record) -> Record:
     return record
 
 
+def validate_record(record: Record) -> bool:
+    """Use pydantic-marc to validate basic MARC structure
+    like having three-digit tags and only one 001, etc.
+    Returns a result boolean but _does not throw exceptions_.
+    """
+    try:
+        MarcRecord.model_validate(record, from_attributes=True)
+    except ValidationError as e:
+        print(f"Warning invalid record: {record.title}")
+        print(e.errors())
+        return False
+    return True
+
+
 def process_marc(file, output):
     """Parse MARC file and search for items."""
     reader = MARCReader(open(file, "rb"))
     writer = MARCWriter(open(output, "wb"))
     for record in reader:
         if record:
+            validate_record(record)
             new_record = process_record(record)
+            validate_record(new_record)
             writer.write(new_record)
 
 
