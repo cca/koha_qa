@@ -10,13 +10,12 @@ from datetime import date
 from pydantic import ValidationError
 from pydantic_marc.models import MarcRecord
 from pymarc import (
+    Field,
     Indicators,
     MARCReader,
     MARCWriter,
     Record,
-    Field,
     Subfield,
-    Indicators,
 )
 
 
@@ -55,11 +54,11 @@ def fix_538(record: Record):
     # Remove junk 538s
     for field in record.get_fields("538"):
         a = field.get("a")
-        if type(a) == str and "Mode of access: World Wide Web" in a:
+        if type(a) is str and "Mode of access: World Wide Web" in a:
             record.remove_field(field)
-        if type(a) == str and "Requires a valid library card and registration" in a:
+        if type(a) is str and "Requires a valid library card and registration" in a:
             record.remove_field(field)
-        if type(a) == str and "System requirements:" in a:
+        if type(a) is str and "System requirements:" in a:
             record.remove_field(field)
 
     # add a better-worded 538 but don't duplicate it
@@ -67,7 +66,7 @@ def fix_538(record: Record):
     msg = 'Use the "Sign Up" link to create a LibraryPass account. You must have an account to read the ebook.'
     for field in record.get_fields("538"):
         a = field.get("a")
-        if type(a) == str and msg in a:
+        if type(a) is str and msg in a:
             has_our_538 = True
     if not has_our_538:
         record.add_ordered_field(
@@ -140,7 +139,7 @@ def lcgft(record: Record):
     has_gn = False
     for field in record.get_fields("655"):
         a = field.get("a")
-        if type(a) == str and "Graphic novels" in a:
+        if type(a) is str and "Graphic novels" in a:
             has_gn = True
     if not has_gn:
         record.add_ordered_field(
@@ -159,11 +158,11 @@ def remove_librarypass(record: Record):
     """Remove references to LibraryPass in 245, 710"""
     for field in record.get_fields("245"):
         c = field.get("c")
-        if type(c) == str and ("Library Pass" in c or "LibraryPass" in c):
+        if type(c) is str and ("Library Pass" in c or "LibraryPass" in c):
             field.delete_subfield("c")
     for field in record.get_fields("710"):
         a = field.get("a")
-        if type(a) == str and ("Library Pass" in a or "LibraryPass" in a):
+        if type(a) is str and ("Library Pass" in a or "LibraryPass" in a):
             record.remove_field(field)
 
 
