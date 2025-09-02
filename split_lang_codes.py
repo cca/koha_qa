@@ -1,13 +1,13 @@
 # a lot our 041 language codes are all stuffed into one $a subfield
 # instead of a separate $a for each language code
 # 041 1_ $aengjpn -> 041 1_ $aeng$ajpn
-from pathlib import Path
 import sys
-from typing import Any, Literal, Set
 import unittest
+from pathlib import Path
+from typing import Any, Literal, Set
 
 import click
-from pymarc import Indicators, Record, Subfield, MARCReader, MARCWriter, Field
+from pymarc import Field, Indicators, MARCReader, MARCWriter, Record, Subfield
 
 # List of ISO 639.2 language codes
 # https://www.loc.gov/standards/iso639-2/php/code_list.php
@@ -704,7 +704,7 @@ class SplitLangCodesTests(unittest.TestCase):
         # invalid code that can't be fixed is dropped
         r: Record = make_record([("a", "oijasidojaisd")])
         r = split_lang_codes(r)
-        assert r.get("041") == None
+        assert r.get("041") is None
 
         # valid code alongside invalid one that can't be fixed
         r: Record = make_record([("a", "oijasidojaisd"), ("a", "eng")])
