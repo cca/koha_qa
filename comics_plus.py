@@ -4,9 +4,9 @@ validate and improve the records otherwise. Prints a warning for "c" corrected
 or "d" deleted records.
 """
 
-import argparse
 from datetime import date
 
+import click
 from pydantic import ValidationError
 from pydantic_marc.models import MarcRecord
 from pymarc import (
@@ -227,6 +227,19 @@ def validate_record(record: Record) -> bool:
     return True
 
 
+@click.command(help="Process Comics Plus MARC records.")
+@click.help_option("-h", "--help")
+@click.argument(
+    "file",
+    metavar="<input.mrc>",
+    type=click.Path(exists=True, readable=True),
+)
+@click.argument(
+    "output",
+    default=f"{date.today().isoformat()}-comicsplus.mrc",
+    metavar="<output.mrc>",
+    type=click.Path(writable=True),
+)
 def process_marc(file, output) -> None:
     """Parse MARC file and search for items."""
     reader = MARCReader(open(file, "rb"))
@@ -240,15 +253,4 @@ def process_marc(file, output) -> None:
 
 
 if __name__ == "__main__":
-    default_output: str = f"{date.today().isoformat()}-comicsplus.mrc"
-    parser = argparse.ArgumentParser(description="Process Comics Plus MARC records")
-    parser.add_argument("input", metavar="<file.mrc>", help="MARC file to process")
-    parser.add_argument(
-        "output",
-        metavar="<output.mrc>",
-        default=default_output,
-        help=f"Output filename, defaults to {default_output}",
-        nargs="?",
-    )
-    args = parser.parse_args()
-    process_marc(args.input, args.output)
+    process_marc()
