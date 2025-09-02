@@ -1,7 +1,7 @@
 """
-Add our proxy server prefix to the 856$u subfield in Comics Plus MARC records.
-Also, print a warning for "c" corrected or "d" deleted records which we will have
-to test for in the future.
+Add our proxy server prefix to the 856$u subfield in Comics Plus MARC records,
+validate and improve the records otherwise. Prints a warning for "c" corrected
+or "d" deleted records.
 """
 
 import argparse
@@ -19,7 +19,7 @@ from pymarc import (
 )
 
 
-def is_update_or_delete(record):
+def is_update_or_delete(record) -> bool:
     """Print message if we find a corrected or deleted record"""
     # https://www.loc.gov/marc/bibliographic/bdleader.html
     status = record.leader[5]
@@ -28,6 +28,8 @@ def is_update_or_delete(record):
         print(
             f"Warning {'corrected' if status == 'c' else 'deleted'} record: {record.title}"
         )
+        return True
+    return False
 
 
 def proxy(url):
@@ -198,7 +200,8 @@ def koha_ebook(record: Record):
 
 def process_record(record: Record) -> Record:
     """Process MARC record"""
-    is_update_or_delete(record)
+    if is_update_or_delete(record):
+        return record  # don't waste work on deleted record
     for field in record.get_fields("856"):
         proxy_856(field)
     fix_538(record)
