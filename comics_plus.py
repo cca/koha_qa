@@ -22,7 +22,7 @@ from pymarc import (
 def is_update_or_delete(record) -> bool:
     """Print message if we find a corrected or deleted record"""
     # https://www.loc.gov/marc/bibliographic/bdleader.html
-    status = record.leader[5]
+    status: str = record.leader[5]
     # ! Comics Plus doesn't seem to use "c" for corrected records
     if status in ["c", "d"]:
         print(
@@ -32,12 +32,12 @@ def is_update_or_delete(record) -> bool:
     return False
 
 
-def proxy(url):
+def proxy(url) -> str:
     """Add proxy prefix to URL"""
     return f"https://login.proxy.cca.edu/login?url={url}"
 
 
-def proxy_856(field):
+def proxy_856(field) -> None:
     """Add proxy prefix to 856$u subfield"""
     # ! this approach won't work if there are multiple u or z subfields
     for url in field.get_subfields("u"):
@@ -52,7 +52,7 @@ def proxy_856(field):
             )
 
 
-def fix_538(record: Record):
+def fix_538(record: Record) -> None:
     # Remove junk 538s
     for field in record.get_fields("538"):
         a = field.get("a")
@@ -84,7 +84,7 @@ def fix_538(record: Record):
         )
 
 
-def rda_ebook(record: Record):
+def rda_ebook(record: Record) -> None:
     """Remove 245$h GMD and add RDA 336/337/338 fields"""
     for field in record.get_fields("245"):
         field.delete_subfield("h")
@@ -136,9 +136,9 @@ def rda_ebook(record: Record):
         )
 
 
-def lcgft(record: Record):
+def lcgft(record: Record) -> None:
     """Add LC Genre/Form Term for Graphic novels"""
-    has_gn = False
+    has_gn: bool = False
     for field in record.get_fields("655"):
         a = field.get("a")
         if type(a) is str and "Graphic novels" in a:
@@ -156,7 +156,7 @@ def lcgft(record: Record):
         )
 
 
-def remove_librarypass(record: Record):
+def remove_librarypass(record: Record) -> None:
     """Remove references to LibraryPass in 245, 710"""
     for field in record.get_fields("245"):
         c = field.get("c")
@@ -168,7 +168,7 @@ def remove_librarypass(record: Record):
             record.remove_field(field)
 
 
-def add_cca(record: Record):
+def add_cca(record: Record) -> None:
     field = record.get("040")
     if field:
         if "CC9" not in field.get_subfields("a", "b", "c", "d"):
@@ -186,9 +186,9 @@ def add_cca(record: Record):
         )
 
 
-def koha_ebook(record: Record):
+def koha_ebook(record: Record) -> None:
     """Koha stores local information in 942, $c is default item type"""
-    field = record.get("942")
+    field: Field | None = record.get("942")
     if field:
         if "EBOOK" not in field.get_subfields("c"):
             field.add_subfield(code="c", value="EBOOK")
@@ -227,7 +227,7 @@ def validate_record(record: Record) -> bool:
     return True
 
 
-def process_marc(file, output):
+def process_marc(file, output) -> None:
     """Parse MARC file and search for items."""
     reader = MARCReader(open(file, "rb"))
     writer = MARCWriter(open(output, "wb"))
@@ -240,7 +240,7 @@ def process_marc(file, output):
 
 
 if __name__ == "__main__":
-    default_output = f"{date.today().isoformat()}-comicsplus.mrc"
+    default_output: str = f"{date.today().isoformat()}-comicsplus.mrc"
     parser = argparse.ArgumentParser(description="Process Comics Plus MARC records")
     parser.add_argument("input", metavar="<file.mrc>", help="MARC file to process")
     parser.add_argument(
