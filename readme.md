@@ -54,7 +54,7 @@ Check if MARC record(s) are in CCA's Summon index.
 
 ```sh
 # search for single title with detailed search results output
-> pipenv run python summon.py --debug "the color purple"
+> uv run python summon.py --debug "the color purple"
 https://cca.summon.serialssolutions.com/search?s.q=%22the+color+purple%22&s.fvf=SourceType%2CLibrary+Catalog%2Cf
 Search Results: 10
 Title: The color purple
@@ -66,7 +66,7 @@ Summon Link: https://cca.summon.serialssolutions.com/search?bookMark=...
 # more search results printed...
 
 # iterate over MARC records with summary output and CSV of missing records
-> pipenv run python summon.py --missing missing.csv file.mrc
+> uv run python summon.py --missing missing.csv file.mrc
 
 Total Records:      50
 Had Search Results: 50
