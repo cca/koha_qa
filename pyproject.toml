@@ -17,7 +17,7 @@ dependencies = [
     "pydantic-marc==0.1.0",
     "pymarc>=5.3",
     "pysftp==0.2.9",
-    "python-dotenv==1.1.1",
+    "python-dotenv==1.2.1",
     "requests==2.32.5",
 ]
 
