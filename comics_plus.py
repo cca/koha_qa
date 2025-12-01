@@ -19,15 +19,14 @@ from pymarc import (
 )
 
 
-def is_update_or_delete(record) -> bool:
-    """Print message if we find a corrected or deleted record"""
+def is_delete(record) -> bool:
+    """Print message if we find a deleted record."""
+    # ! Comics Plus for a long time didn't use "c" for corrected records, then
+    # ! started using it for _new_ records, so we cannot trust that status.
     # https://www.loc.gov/marc/bibliographic/bdleader.html
     status: str = record.leader[5]
-    # ! Comics Plus doesn't seem to use "c" for corrected records
-    if status in ["c", "d"]:
-        print(
-            f"Warning {'corrected' if status == 'c' else 'deleted'} record: {record.title}"
-        )
+    if status == "d":
+        print(f"Warning deleted record: {record.title}")
         return True
     return False
 
@@ -200,8 +199,8 @@ def koha_ebook(record: Record) -> None:
 
 def process_record(record: Record) -> Record:
     """Process MARC record"""
-    if is_update_or_delete(record):
-        return record  # don't waste work on deleted record
+    if is_delete(record):
+        return record  # don't waste work on deleted records
     for field in record.get_fields("856"):
         proxy_856(field)
     fix_538(record)
