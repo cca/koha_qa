@@ -44,6 +44,19 @@ options:
   -h, --help    show this help message and exit
 ```
 
+## dupes.py
+
+Find duplicate MARC records based on the 001 control field. We could extend this to consider duplicates in other manners as well.
+
+```sh
+Usage: dupes.py [OPTIONS] <input.mrc>
+
+  Print records with duplicate 001s from a MARC file.
+
+Options:
+  -h, --help  Show this message and exit.
+```
+
 ## link_check.py
 
 Check URLs in Koha 856$u fields. See [the readme](./linkcheck/readme.md) for details.
