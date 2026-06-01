@@ -6,7 +6,7 @@ Various bibliographic metadata tools.
 
 To use summon.py, obtain a Summon API key from the Ex Libris Developer Network, see [their documentation](https://knowledge.exlibrisgroup.com/Summon/Product_Documentation/Configuring_The_Summon_Service/Configurations_Outside_of_the_Summon_Administration_Console/Summon%3A_Using_the_Summon_API). To use summon-update.py, add our Summon SFTP credentials to the .env file.
 
-This project is an experiment in using [uv](https://github.com/astral-sh/uv) for python package management. Prefix python commands with `uv run` to use the project's virtual environment.
+Prefix python commands with `uv run` to use the project's virtual environment.
 
 ```sh
 uv sync
@@ -19,12 +19,8 @@ vim .env # edit in secret values
 Split MARC files into smaller subsets named like `records-1.mrc`, `records-2.mrc`, etc. This is the same as MARCEdit's MARCSplit feature if you would prefer not to use the command line. Koha can only process so many records at once without failing so we tend to batch record imports at 500 or 1000 records at a time.
 
 ```sh
-Usage: break.py [OPTIONS] N file.mrc
-
-  break MARC file into smaller ones of N or less records
-
-Options:
-  -h, --help  Show this message and exit.
+# break file.mrc into batches of 500 records
+uv run python break.py 500 file.mrc
 ```
 
 ## comics_plus.py
@@ -49,12 +45,7 @@ options:
 Find duplicate MARC records based on the 001 control field. We could extend this to consider duplicates in other manners as well.
 
 ```sh
-Usage: dupes.py [OPTIONS] <input.mrc>
-
-  Print records with duplicate 001s from a MARC file.
-
-Options:
-  -h, --help  Show this message and exit.
+uv run python dupes.py file.mrc
 ```
 
 ## link_check.py
