@@ -241,14 +241,15 @@ def validate_record(record: Record) -> bool:
 )
 def process_marc(file, output) -> None:
     """Parse MARC file and search for items."""
-    reader = MARCReader(open(file, "rb"))
-    writer = MARCWriter(open(output, "wb"))
-    for record in reader:
-        if record:
-            validate_record(record)
-            new_record = process_record(record)
-            validate_record(new_record)
-            writer.write(new_record)
+    with open(file, "rb") as input_file, open(output, "wb") as output_file:
+        reader = MARCReader(input_file)
+        writer = MARCWriter(output_file)
+        for record in reader:
+            if record:
+                validate_record(record)
+                new_record: Record = process_record(record)
+                validate_record(new_record)
+                writer.write(new_record)
 
 
 if __name__ == "__main__":

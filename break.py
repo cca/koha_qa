@@ -5,7 +5,7 @@ from pymarc import MARCReader, MARCWriter
 
 
 def get_writer(n: int):
-    fh = open(f"records-{n + 1}.mrc", "wb")
+    fh = open(f"records-{n + 1}.mrc", "wb")  # noqa: SIM115
     writer = MARCWriter(fh)
     return writer
 

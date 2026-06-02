@@ -136,7 +136,7 @@ def search(params) -> list[dict]:
     # TODO retry with a delay in between?
     time.sleep(1)
     try:
-        response: requests.Response = requests.get(url, headers=headers)
+        response: requests.Response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         return response.json()["documents"]
     except requests.exceptions.ConnectionError as e:
@@ -153,10 +153,10 @@ def result(documents: list[dict]) -> None:
     """
     print(f"Search Results: {len(documents)}")
     for doc in documents:
-        print(f"Title: {re.sub(r'</?h>', '', doc.get('Title',[''])[0])}")
-        print(f"Authors: {', '.join(doc.get('Author',['']))}")
-        print(f"Publication Date: {doc.get('PublicationDate',[''])[0]}")
-        print(f"ISBNs: {', '.join(doc.get('ISBN',['']))}")
+        print(f"Title: {re.sub(r'</?h>', '', doc.get('Title', [''])[0])}")
+        print(f"Authors: {', '.join(doc.get('Author', ['']))}")
+        print(f"Publication Date: {doc.get('PublicationDate', [''])[0]}")
+        print(f"ISBNs: {', '.join(doc.get('ISBN', ['']))}")
         print(f"Type: {doc['ContentType'][0]}")
         print(
             f"Summon Link: https://{config['ACCESS_ID']}.summon.serialssolutions.com/search?bookMark={doc['BookMark'][0]}"
@@ -259,47 +259,48 @@ def process_marc(file) -> None:
     Parse MARC file and search for items.
     """
     missing: list[Record] = []
-    reader = MARCReader(open(file, "rb"))
-    for i, record in enumerate(reader):
-        if args.limit and i >= args.limit:
-            break
-        if record:
-            # skip suppressed records 942$n = 1
-            try:
-                suppressed: str = record.get_fields("942")[0].get_subfields("n")[0]
-                if suppressed == "1" or suppressed.lower() == "true":
-                    continue
-            except IndexError:
-                pass
+    with open(file, "rb") as fh:
+        reader = MARCReader(fh)
+        for i, record in enumerate(reader):
+            if args.limit and i >= args.limit:
+                break
+            if record:
+                # skip suppressed records 942$n = 1
+                try:
+                    suppressed: str = record.get_fields("942")[0].get_subfields("n")[0]
+                    if suppressed == "1" or suppressed.lower() == "true":
+                        continue
+                except IndexError:
+                    pass
 
-            summary["Records"] += 1
+                summary["Records"] += 1
 
-            isbn_fields: list[Field] = record.get_fields("020")
-            isbn_subfields: list[list[str]] = [
-                field.get_subfields("a") for field in isbn_fields
-            ]
-            isbns: list[str] = [
-                num_only(isbn) for sublist in isbn_subfields for isbn in sublist
-            ]
-            summary["Had ISBN"] += 1 if len(isbns) else 0
+                isbn_fields: list[Field] = record.get_fields("020")
+                isbn_subfields: list[list[str]] = [
+                    field.get_subfields("a") for field in isbn_fields
+                ]
+                isbns: list[str] = [
+                    num_only(isbn) for sublist in isbn_subfields for isbn in sublist
+                ]
+                summary["Had ISBN"] += 1 if len(isbns) else 0
 
-            params: dict[str, str] = make_query(record)
-            docs: list[dict] = search(params)
-            if args.debug:
-                result(docs)
+                params: dict[str, str] = make_query(record)
+                docs: list[dict] = search(params)
+                if args.debug:
+                    result(docs)
 
-            summary["Found"] += 1 if len(docs) else 0
-            if len(isbns):
-                for doc in docs:
-                    if has_match(doc.get("ISBN", []), isbns):
-                        summary["ISBN Matches"] += 1
-                        break
-                else:
-                    if args.missing:
-                        missing.append(record)
+                summary["Found"] += 1 if len(docs) else 0
+                if len(isbns):
+                    for doc in docs:
+                        if has_match(doc.get("ISBN", []), isbns):
+                            summary["ISBN Matches"] += 1
+                            break
+                    else:
+                        if args.missing:
+                            missing.append(record)
 
-        else:
-            summary["Malformed Records"] += 1
+            else:
+                summary["Malformed Records"] += 1
 
     summarize()
     if args and args.missing:
