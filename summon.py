@@ -5,7 +5,6 @@
 import argparse
 import base64
 import csv
-from datetime import datetime
 import hashlib
 import hmac
 import os
@@ -13,12 +12,12 @@ import re
 import signal
 import sys
 import time
-from typing import List
-from urllib.parse import urlencode, quote_plus, unquote_plus
+from datetime import datetime
+from urllib.parse import quote_plus, unquote_plus, urlencode
 
+import requests
 from dotenv import dotenv_values
 from pymarc import Field, MARCReader, Record
-import requests
 
 config: dict = {
     **dotenv_values(".env"),  # load shared development variables
@@ -129,7 +128,7 @@ def search(params) -> list[dict]:
 
     headers: dict[str, str] = build_headers(qs)
 
-    url: str = "https://{}{}?{}".format(host, path, qs)
+    url: str = f"https://{host}{path}?{qs}"
     # print normal, non-API search URL for debugging
     if args.debug:
         print(search_link(qs))
@@ -275,11 +274,11 @@ def process_marc(file) -> None:
 
             summary["Records"] += 1
 
-            isbn_fields: List[Field] = record.get_fields("020")
-            isbn_subfields: List[List[str]] = [
+            isbn_fields: list[Field] = record.get_fields("020")
+            isbn_subfields: list[list[str]] = [
                 field.get_subfields("a") for field in isbn_fields
             ]
-            isbns: List[str] = [
+            isbns: list[str] = [
                 num_only(isbn) for sublist in isbn_subfields for isbn in sublist
             ]
             summary["Had ISBN"] += 1 if len(isbns) else 0

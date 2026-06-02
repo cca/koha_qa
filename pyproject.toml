@@ -25,3 +25,18 @@ dependencies = [
 Homepage = "https://github.com/cca/koha_qa"
 Issues = "https://github.com/cca/koha_qa/issues"
 Repository = "https://github.com/cca/koha_qa"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.15",
+]
+
+[tool.ruff.lint]
+# Bugbear, Pyflakes, import sorting, syntax upgrades, security, simplicity
+select = ["B", "F", "I", "UP", "S", "SIM"]
+ignore = [
+    # Line too long
+    "E501",
+    # Allow assert
+    "S101",
+]

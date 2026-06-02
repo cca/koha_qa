@@ -1,14 +1,14 @@
 import csv
-from datetime import date
 import io
 import logging
-from pathlib import Path
 import os
 import signal
 import sys
+from datetime import date
+from pathlib import Path
 
-from dotenv import dotenv_values
 import httpx
+from dotenv import dotenv_values
 
 config: dict = {
     **dotenv_values(".env"),  # load shared development variables

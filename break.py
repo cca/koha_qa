@@ -1,5 +1,4 @@
 from io import TextIOWrapper
-from pathlib import Path
 
 import click
 from pymarc import MARCReader, MARCWriter

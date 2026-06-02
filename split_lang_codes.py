@@ -4,7 +4,7 @@
 import sys
 import unittest
 from pathlib import Path
-from typing import Any, Literal, Set
+from typing import Any, Literal
 
 import click
 from pymarc import Field, Indicators, MARCReader, MARCWriter, Record, Subfield
@@ -522,10 +522,10 @@ codes: list[str] = [
 ]
 
 
-def sort_subfield_codes(code_list: list[str]) -> tuple[Set[str], Set[str]]:
+def sort_subfield_codes(code_list: list[str]) -> tuple[set[str], set[str]]:
     """Sort subfield codes into sets of invalid and valid ones"""
-    invalid_codes: Set[str] = set()
-    valid_codes: Set[str] = set()
+    invalid_codes: set[str] = set()
+    valid_codes: set[str] = set()
     for code in code_list:
         if code not in codes:
             invalid_codes.add(code)
@@ -540,7 +540,7 @@ def copy_non_a_subfields(original_field: Field, new_field: Field) -> None:
     non_a_subfields: dict[str, list[Any]] = original_field.subfields_as_dict()
     if original_field.get("a"):
         non_a_subfields.pop("a")
-    for letter in non_a_subfields.keys():
+    for letter in non_a_subfields:
         for value in non_a_subfields[letter]:
             new_field.add_subfield(code=letter, value=value)
 

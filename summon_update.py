@@ -1,14 +1,14 @@
 # puts MARC file to our Summon SFTP server
 # https://knowledge.exlibrisgroup.com/Summon/Product_Documentation/Configuring_The_Summon_Service/Working_with_Local_Collections_in_the_Summon_Service/Getting_Local_Collections_Loaded_into_the_Summon_Index/Summon%3A_Exporting_Catalog_Holdings_-_Uploading_to_Summon
-from datetime import datetime
 import logging
 import os
+from datetime import datetime
 from typing import Literal
 
 import click
+import pysftp
 from dotenv import dotenv_values
 from pymarc import MARCReader, Record
-import pysftp
 
 config = {
     **dotenv_values(".env"),  # load shared development variables
