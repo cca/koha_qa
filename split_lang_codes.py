@@ -548,6 +548,7 @@ def copy_non_a_subfields(original_field: Field, new_field: Field) -> None:
 def split_lang_codes(record: Record, debug: bool = False) -> Record:
     """Split multiple language codes in 041 $a into separate subfields"""
     for field in record.get_fields("041"):
+        new_field: Field | None = None
         # only process fields that use the MARC language codes
         if field.indicator2 == " ":
             if debug:
@@ -587,7 +588,7 @@ def split_lang_codes(record: Record, debug: bool = False) -> Record:
                             err=True,
                         )
                 if len(valid_codes):
-                    new_field: Field = Field(
+                    new_field = Field(
                         tag="041",
                         indicators=field.indicators,
                         subfields=[
@@ -596,11 +597,11 @@ def split_lang_codes(record: Record, debug: bool = False) -> Record:
                     )
                     copy_non_a_subfields(field, new_field)
 
-                if debug:
+                if debug and new_field:
                     click.echo(f"New field: {new_field}")
 
                 record.remove_field(field)
-                if "new_field" in locals():
+                if new_field:
                     record.add_ordered_field(new_field)
 
     return record
@@ -770,19 +771,24 @@ def cli():
     required=False,
 )
 @click.option("--debug", "-d", is_flag=True, help="Print changes, do not write to file")
-def fix(input: Path, output: Path, debug: bool) -> None:
-    """Fix input records"""
+def fix(input: Path, output: Path | None, debug: bool) -> None:
+    """Fix invalid/offensive language codes in input records."""
     with open(input, "rb") as input_fh:
-        if output:
-            writer = MARCWriter(open(output, "wb"))
         reader = MARCReader(input_fh)
-        for record in reader:
-            if record:
-                new_record: Record = split_lang_codes(record, debug)
-                if not debug and output:
-                    writer.write(new_record)
-        if output:
-            writer.close()
+        if debug:
+            click.echo("Debug mode: changes will be printed but not written to file.")
+            for record in reader:
+                if record:
+                    new_record: Record = split_lang_codes(record, debug)
+        elif output:
+            with open(output, "wb") as output_fh:
+                writer = MARCWriter(output_fh)
+                for record in reader:
+                    if record:
+                        new_record: Record = split_lang_codes(record, debug)
+                        writer.write(new_record)
+        else:
+            click.echo("Must provide either --debug or an output file path.", err=True)
 
 
 @cli.command()

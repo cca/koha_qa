@@ -96,6 +96,16 @@ Options:
   -d, --debug                     enable SFTP debug logging
 ```
 
+## split_lang_codes.py
+
+One-time fix for outdated lang codes and all our lang codes being stuffed into a single `$a` subfield, e.g. `041 1_ $aengjap -> 041 1_ $aeng$ajpn`. Usage:
+
+```sh
+uv run python split_lang_codes.py test # run test suite
+uv run python split_lang_codes.py fix --debug input.mrc # print changes to console, no file changes
+uv run python split_lang_codes.py fix input.mrc output.mrc # write changes to output.mrc
+```
+
 ## LICENSE
 
 [ECL Version 2.0](https://opensource.org/licenses/ECL-2.0)
