@@ -29,7 +29,7 @@ Repository = "https://github.com/cca/koha_qa"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.15",
+    "ruff>=0.15.18",
 ]
 
 [tool.ruff.lint]
