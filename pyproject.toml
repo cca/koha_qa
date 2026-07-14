@@ -16,7 +16,7 @@ dependencies = [
     "httpx==0.28.1",
     "paramiko==3.5.1",
     "pydantic-marc==0.1.0",
-    "pymarc>=5.3",
+    "pymarc>=5.4.0",
     "pysftp==0.2.9",
     "python-dotenv==1.2.2",
     "requests==2.34.2",
